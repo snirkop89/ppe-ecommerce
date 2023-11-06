@@ -1,0 +1,30 @@
+{
+    "header": {
+        "id": "2250f45d-1493-4be3-af66-4dde7d8ddc45",
+        "publishedAt": "2023-11-06T09:00:30.087444-04:00"
+    },
+    "event": {
+        "Header": {
+            "id": "2250f45d-1493-4be3-af66-4dde7d8ddc45",
+            "publishedAt": "2023-11-06T09:00:30.087444-04:00"
+        },
+        "orderId": "3087d70d-b490-44cb-9567-65e3fb6652b5",
+        "products": [
+            {
+                "productId": "6bc91dc9-b1f1-48c8-9dea-e600470dfb95",
+                "quantity": 1
+            }
+        ],
+        "customer": {
+            "firstName": "Bruce",
+            "lastName": "Wayne",
+            "emailAddress": "bruce@wayne.com",
+            "shippingAddress": {
+                "street": "1 There St.",
+                "city": "City",
+                "state": "State",
+                "postalCode": "00000"
+            }
+        }
+    }
+}
