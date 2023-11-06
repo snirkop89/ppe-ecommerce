@@ -29,3 +29,7 @@ func InternalServerErrorResponse(w http.ResponseWriter, msg string) error {
 		"error": msg,
 	})
 }
+
+func FailedValidationResponse(w http.ResponseWriter, r *http.Request, errors map[string]string) error {
+	return WriteJSON(w, http.StatusUnprocessableEntity, errors)
+}

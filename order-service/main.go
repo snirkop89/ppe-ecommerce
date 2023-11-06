@@ -39,8 +39,10 @@ func main() {
 
 	// Setup routes
 	r := chi.NewRouter()
-	r.Get("/healthcheck", healthcheckHandler(logger))
-	r.Post("/publish", publishEventHandler(logger, p))
+	r.Route("/v1", func(r chi.Router) {
+		r.Get("/healthcheck", healthcheckHandler(logger))
+		r.Post("/orders", orderCreateHandler(logger, p))
+	})
 
 	srv := &http.Server{
 		Addr:         cfg.addr,
