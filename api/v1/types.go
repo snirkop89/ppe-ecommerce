@@ -4,7 +4,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/snirkop89/ppe-ecommerce/validator"
+	"github.com/snirkop89/ppe-ecommerce/core/validator"
 )
 
 type Header struct {
@@ -22,12 +22,20 @@ func ValidateOrder(v *validator.Validator, order *Order) {
 	v.Check(len(order.Products) > 0, "products", "must contain at least 1 product")
 
 	for _, p := range order.Products {
-		v.Check(p.Quantity > 0, "products", "quantity must be more than zero")
+		_, err := uuid.Parse(p.ProductID)
+		v.Check(err == nil, "productId", "productId is not valid")
+		v.Check(p.Quantity > 0, "quantity", "quantity must be more than zero")
 	}
 
 	v.Check(validator.Matches(order.Customer.Email, validator.EmailRX), "email", "invalid customer email address")
 	v.Check(len(order.Customer.FirstName) > 1, "firstName", "must be more than 2 characters")
 	v.Check(len(order.Customer.LastName) > 2, "lastName", "must be more than 2 characters")
+
+	v.Check(len(order.Customer.ShippingAddress.City) > 0, "city", "is required")
+	v.Check(len(order.Customer.ShippingAddress.PostalCode) > 0, "postalCode", "is required")
+	v.Check(len(order.Customer.ShippingAddress.State) > 0, "state", "is required")
+	v.Check(len(order.Customer.ShippingAddress.Street) > 0, "street", "is required")
+
 }
 
 func (o Order) ToOrderReceivedEvent() OrderReceived {
