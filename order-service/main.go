@@ -2,7 +2,6 @@ package main
 
 import (
 	"flag"
-	"log/slog"
 	"net/http"
 	"os"
 	"strings"
@@ -10,6 +9,8 @@ import (
 
 	"github.com/confluentinc/confluent-kafka-go/v2/kafka"
 	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
+	"github.com/snirkop89/ppe-ecommerce/logger"
 )
 
 type config struct {
@@ -25,23 +26,28 @@ func main() {
 		cfg.addr = ":" + cfg.addr
 	}
 
-	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{}))
+	log := logger.NewLogger("order-service")
 
 	// Initialize kafka producer
 	p, err := kafka.NewProducer(&kafka.ConfigMap{
 		"bootstrap.servers": "localhost",
 	})
 	if err != nil {
-		logger.Error(err.Error())
+		log.Error(err.Error())
 		os.Exit(1)
 	}
 	defer p.Close()
 
 	// Setup routes
 	r := chi.NewRouter()
+	r.Use(middleware.Recoverer)
+	r.Use(middleware.RequestID)
+	// TODO: Create logger middleware
+	r.Use(logger.LoggingMiddleware(log))
+
 	r.Route("/v1", func(r chi.Router) {
-		r.Get("/healthcheck", healthcheckHandler(logger))
-		r.Post("/orders", orderCreateHandler(logger, p))
+		r.Get("/healthcheck", healthcheckHandler(log))
+		r.Post("/orders", orderCreateHandler(log, p))
 	})
 
 	srv := &http.Server{
@@ -51,8 +57,9 @@ func main() {
 		WriteTimeout: 10 * time.Second,
 	}
 
-	logger.Info("Starting HTTP server", "addr", srv.Addr)
+	// TODO: Graceful shutdown
+	log.Info("Starting HTTP server", "addr", srv.Addr)
 	if err := srv.ListenAndServe(); err != nil {
-		logger.Error(err.Error())
+		log.Error(err.Error())
 	}
 }

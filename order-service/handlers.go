@@ -9,7 +9,7 @@ import (
 	"github.com/google/uuid"
 	v1 "github.com/snirkop89/ppe-ecommerce/api/v1"
 	"github.com/snirkop89/ppe-ecommerce/core/httpio"
-	"github.com/snirkop89/ppe-ecommerce/validator"
+	"github.com/snirkop89/ppe-ecommerce/core/validator"
 )
 
 var (
