@@ -12,6 +12,13 @@ type Header struct {
 	PublishedAt time.Time `json:"publishedAt"` // Time when event was published
 }
 
+func NewHeader() Header {
+	return Header{
+		ID:          uuid.NewString(),
+		PublishedAt: time.Now(),
+	}
+}
+
 type Order struct {
 	OrderID  string    `json:"orderId"`
 	Products []Product `json:"products"`
@@ -40,11 +47,8 @@ func ValidateOrder(v *validator.Validator, order *Order) {
 
 func (o Order) ToOrderReceivedEvent() OrderReceived {
 	return OrderReceived{
-		Header: Header{
-			ID:          uuid.NewString(),
-			PublishedAt: time.Now(),
-		},
-		Order: o,
+		Header: NewHeader(),
+		Order:  o,
 	}
 }
 
