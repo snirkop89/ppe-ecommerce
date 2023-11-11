@@ -5,10 +5,20 @@ import (
 	"net/http"
 	"os"
 	"time"
+
+	"golang.org/x/term"
 )
 
 func NewLogger(service string) *slog.Logger {
-	h := slog.NewJSONHandler(os.Stderr, nil)
+
+	// Create handle based on TTY environment.
+	var h slog.Handler
+	if term.IsTerminal(int(os.Stderr.Fd())) {
+		h = slog.NewTextHandler(os.Stderr, nil)
+	} else {
+		h = slog.NewJSONHandler(os.Stderr, nil)
+
+	}
 	l := slog.New(h.WithAttrs([]slog.Attr{{Key: "service", Value: slog.StringValue(service)}}))
 	return l
 }

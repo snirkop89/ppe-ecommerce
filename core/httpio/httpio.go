@@ -33,3 +33,9 @@ func InternalServerErrorResponse(w http.ResponseWriter, msg string) error {
 func FailedValidationResponse(w http.ResponseWriter, r *http.Request, errors map[string]string) error {
 	return WriteJSON(w, http.StatusUnprocessableEntity, errors)
 }
+
+func HealthCheckHandler(w http.ResponseWriter, r *http.Request) {
+	_ = WriteJSON(w, http.StatusOK, map[string]string{
+		"status": "ok",
+	})
+}

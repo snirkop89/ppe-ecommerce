@@ -1,11 +1,9 @@
 package main
 
 import (
-	"encoding/json"
 	"log/slog"
 	"net/http"
 
-	"github.com/confluentinc/confluent-kafka-go/v2/kafka"
 	"github.com/google/uuid"
 	v1 "github.com/snirkop89/ppe-ecommerce/api/v1"
 	"github.com/snirkop89/ppe-ecommerce/core/httpio"
@@ -28,7 +26,11 @@ func healthcheckHandler(log *slog.Logger) http.HandlerFunc {
 	}
 }
 
-func orderCreateHandler(log *slog.Logger, producer *kafka.Producer) http.HandlerFunc {
+type producer interface {
+	PublishEvent(topic string, data any) error
+}
+
+func orderCreateHandler(log *slog.Logger, producer producer) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var input struct {
 			Products []v1.Product `json:"products"`
@@ -53,17 +55,7 @@ func orderCreateHandler(log *slog.Logger, producer *kafka.Producer) http.Handler
 			return
 		}
 
-		msg, err := json.Marshal(order.ToOrderReceivedEvent())
-		if err != nil {
-			log.Error(err.Error())
-			httpio.BadRequestResponse(w, err.Error())
-			return
-		}
-
-		err = producer.Produce(&kafka.Message{
-			TopicPartition: kafka.TopicPartition{Topic: &orderReceivedTopic, Partition: kafka.PartitionAny},
-			Value:          msg,
-		}, nil)
+		err := producer.PublishEvent(orderReceivedTopic, order.ToOrderReceivedEvent())
 		if err != nil {
 			log.Error(err.Error())
 			httpio.InternalServerErrorResponse(w, err.Error())
