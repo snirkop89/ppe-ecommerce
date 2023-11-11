@@ -15,7 +15,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	v1 "github.com/snirkop89/ppe-ecommerce/api/v1"
-	"github.com/snirkop89/ppe-ecommerce/logger"
+	"github.com/snirkop89/ppe-ecommerce/core/logger"
 	"golang.org/x/sync/errgroup"
 )
 

@@ -10,7 +10,7 @@ import (
 	"github.com/confluentinc/confluent-kafka-go/v2/kafka"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
-	"github.com/snirkop89/ppe-ecommerce/logger"
+	"github.com/snirkop89/ppe-ecommerce/core/logger"
 )
 
 type config struct {

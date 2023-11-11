@@ -8,6 +8,7 @@ require (
 	github.com/go-chi/chi/v5 v5.0.10
 	github.com/google/uuid v1.3.0
 	golang.org/x/sync v0.5.0
+	golang.org/x/term v0.6.0
 )
 
 require (
