@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"flag"
+	"log/slog"
 	"net/http"
 	"os"
 	"os/signal"
@@ -14,26 +15,34 @@ import (
 	"github.com/dgraph-io/badger/v4"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
-	v1 "github.com/snirkop89/ppe-ecommerce/api/v1"
+	"github.com/snirkop89/ppe-ecommerce/core/httpio"
 	"github.com/snirkop89/ppe-ecommerce/core/logger"
 	"golang.org/x/sync/errgroup"
 )
 
+type config struct {
+	Addr   string
+	DBPath string
+	Kafka  struct {
+		server string
+	}
+}
+
+type application struct {
+	config   config
+	log      *slog.Logger
+	consumer *kafka.Consumer
+	db       *badger.DB
+}
+
 func main() {
-	addr := flag.String("addr", ":8081", "address to listen on, i.e 127.0.0.1:8000")
+	var cfg config
+	flag.StringVar(&cfg.Addr, "addr", ":8081", "address to listen on, i.e 127.0.0.1:8000")
+	flag.StringVar(&cfg.DBPath, "db-path", "/tmp/inventory-consumer", "directory to create database")
+	flag.StringVar(&cfg.Kafka.server, "kafka-server", "localhost", "kafka server address")
 	flag.Parse()
 
 	log := logger.NewLogger("inventory-consumer")
-
-	// Initialize kafka producer
-	p, err := kafka.NewProducer(&kafka.ConfigMap{
-		"bootstrap.servers": "localhost:9092",
-	})
-	if err != nil {
-		log.Error(err.Error())
-		os.Exit(1)
-	}
-	defer p.Close()
 
 	// Open th embedded database. Used for saving handles kafka messages,
 	// to avoid duplication.
@@ -44,24 +53,31 @@ func main() {
 	}
 	defer db.Close()
 
+	c, err := kafka.NewConsumer(&kafka.ConfigMap{
+		"bootstrap.servers": cfg.Kafka.server,
+		"group.id":          "inventory",
+		"auto.offset.reset": "earliest",
+	})
+	if err != nil {
+		log.Error(err.Error())
+		os.Exit(1)
+	}
+	defer c.Close()
+	app := &application{
+		config:   cfg,
+		log:      log,
+		consumer: c,
+		db:       db,
+	}
+
 	// Prepare a context to catch cancelation signals.
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
 	defer cancel()
 	g, ctx := errgroup.WithContext(ctx)
 
-	failedOrders := make(chan v1.OrderReceived)
-	confirmedOrders := make(chan v1.Order)
-	defer func() {
-		close(failedOrders)
-		close(confirmedOrders)
-	}()
-
 	g.Go(func() error {
-		return consumeOrders(ctx, log, db, "OrderReceived", failedOrders, confirmedOrders)
+		return app.consumeOrders(ctx)
 	})
-
-	go publishError(ctx, p, failedOrders)
-	go publishOrderConfirmed(ctx, log, p, confirmedOrders)
 
 	// Setup routes
 	r := chi.NewRouter()
@@ -70,11 +86,11 @@ func main() {
 	r.Use(logger.LoggingMiddleware(log))
 
 	r.Route("/v1", func(r chi.Router) {
-		r.Get("/healthcheck", healthcheckHandler)
+		r.Get("/healthcheck", httpio.HealthCheckHandler)
 	})
 
 	srv := &http.Server{
-		Addr:         *addr,
+		Addr:         cfg.Addr,
 		Handler:      r,
 		ReadTimeout:  10 * time.Second,
 		WriteTimeout: 10 * time.Second,
@@ -101,6 +117,7 @@ func main() {
 			log.Error(err.Error())
 			return err
 		}
+		log.Info("Server shutdown completed")
 		return nil
 	})
 	// ########
@@ -110,8 +127,4 @@ func main() {
 	if err != nil {
 		log.Error(err.Error())
 	}
-}
-
-func healthcheckHandler(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(200)
 }

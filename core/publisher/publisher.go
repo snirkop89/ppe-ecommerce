@@ -34,6 +34,8 @@ func (p *Producer) PublishEvent(topic string, data any) error {
 	if err != nil {
 		return fmt.Errorf("publish event: %w", err)
 	}
+
+	p.Client.Flush(500)
 	return nil
 
 }
