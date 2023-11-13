@@ -11,11 +11,20 @@ type OrderPickedAndPacked struct {
 }
 
 type OrderError struct {
-	Header Header        `json:"header"`
-	Event  OrderReceived `json:"event"`
+	Header Header `json:"header"`
+	Event  any    `json:"event"`
 }
 
 type OrderConfirmed struct {
 	Header Header `json:"header"`
 	Order
+}
+
+type Notification struct {
+	Header    Header `json:"header"`
+	Type      string `json:"type"`
+	Recipient string `json:"recipient"`
+	From      string `json:"from"`
+	Subject   string `json:"subject"`
+	Body      string `json:"body"`
 }
