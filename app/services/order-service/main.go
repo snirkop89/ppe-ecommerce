@@ -35,7 +35,7 @@ func main() {
 
 	// Initialize kafka producer
 	p, err := publisher.New(&kafka.ConfigMap{
-		"boostrap.server": "localhost",
+		"bootstrap.servers": cfg.kafka.server,
 	})
 	if err != nil {
 		log.Error(err.Error())
